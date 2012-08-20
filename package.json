@@ -1,0 +1,31 @@
+{
+  "name": "tubbs-reststorage",
+  "version": "0.0.0",
+  "description": "REST adaptor for Tubbs",
+  "main": "index.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dandean/tubbs-reststorage.git"
+  },
+  "keywords": [
+    "rest",
+    "model",
+    "tubbs",
+    "database",
+    "nosql"
+  ],
+  "author": "Dan Dean",
+  "license": "MIT",
+  "dependencies": {
+    "guid": "*"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "tubbs": "*",
+    "express": "*",
+    "modulr": "*"
+  }
+}
