@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Tubbs RestStorage</title>
+  <link rel="stylesheet" href="/mocha.css" />
+  <script src="/mocha.js"></script>
+  <script>
+    mocha.setup({
+      ui: 'bdd',
+      globals: ['console']
+    });
+  </script>
+  <script src="/tubbs.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mocha.run()
+    });
+  </script>
+</head>
+<body>
+  <div id="mocha"></div>
+</body>
+</html>
