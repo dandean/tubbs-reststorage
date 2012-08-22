@@ -205,7 +205,7 @@ function save(record, callback) {
   request.call(
     this, {
       method: isNew ? 'POST' : 'PUT',
-      id: isNew ? undefined : options.id,
+      id: isNew ? undefined : id,
       data: record
     },
     function(e, result) {
