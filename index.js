@@ -24,6 +24,9 @@ function createError(name, message) {
 function RestStorage(config) {
   this.config = config;
   this.ready = false;
+
+  // Hash of Type'd models.
+  this.data = {};
 }
 
 /**
