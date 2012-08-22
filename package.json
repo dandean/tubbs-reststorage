@@ -24,8 +24,8 @@
   },
   "devDependencies": {
     "mocha": "*",
-    "tubbs": "*",
     "express": "*",
-    "modulr": "*"
+    "tubbs": "*",
+    "browserify": "*"
   }
 }
