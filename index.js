@@ -48,7 +48,7 @@ function request(options, callback) {
     if (options.id) {
       url += '/' + options.id;
     } else {
-      callback(util.Error("ArgumentError", method + ' requests require the `id` option.'));
+      callback(createError("ArgumentError", method + ' requests require the `id` option.'));
       return;
     }
   }
@@ -68,10 +68,14 @@ function request(options, callback) {
     var status = xhr.status;
     if (status < 200 || status > 399) {
       if (status === 0) {
-        error = util.Error('ConnectionError', 'Could not connect');
+        error = createError('ConnectionError', 'Could not connect');
       } else if (status >= 500) {
-        error = util.Error('ServerError');
-      } else error = util.Error('HttpError');
+        error = createError('ServerError');
+      } else error = createError('HttpError');
+    }
+
+    if (!error && xhr.getResponseHeader('Content-Type').indexOf('/json') == -1) {
+      error = createError('HttpResponseError', 'Response is not JSON.');
     }
 
     callback(error, data);
@@ -187,7 +191,7 @@ function save(record, callback) {
   var primaryKey = Type.primaryKey;
 
   if (!record) {
-    callback(util.Error('ArgumentError', 'Cannot save null model.'));
+    callback(createError('ArgumentError', 'Cannot save null model.'));
     return;
   }
 
