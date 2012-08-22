@@ -210,17 +210,19 @@ function save(record, callback) {
     },
     function(e, result) {
       if (!e) {
-        // Update local data if save was successful.
-        this.data[result[primaryKey]] = result;
+        if (!result || primaryKey in result === false) {
+          e = createError('HttpResponseError', 'Response is missing a primaryKey and cannot be used.');
+        } else {
+          Object.keys(result).forEach(function(field) {
+            // TODO: Should we do some sort of batched change set? Should it be silent?
+            record[field] = result[field];
+          });
+          if (isNew) this.data[result[primaryKey]] = record;
+        }
       }
-      callback(e, result);
+      callback(e, record);
     }.bind(this)
   );
-
-  if (primaryKey in record && record[primaryKey] !== undefined && record[primaryKey] !== '') {
-    this.data[record[primaryKey]] = record;
-    callback(null, record);
-  }
 };
 
 /**
