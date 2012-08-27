@@ -10,6 +10,7 @@ var file = function(path) {
 };
 
 app.all('*', function(req, res, next) {
+  // debugger;
   // Do not cache any resources from this server.
   res.header('Cache-Control', 'no-cache');
   next();
@@ -19,26 +20,28 @@ app.all('*', function(req, res, next) {
 // RESOURCES
 //
 
-function getDummyUser() {
-  return {
-    username: 'dandean',
-    first: 'Dan',
-    last: 'Dean',
-    email: 'tubby@tubbs.co'
+var DB = {
+  "rad": {
+    "username": 'rad',
+    "first": 'Rad',
+    "last": 'Radical',
+    "email": 'rad@radical.com'
+  }
+};
 
-  };
-}
-
+// CSS
 app.get('/mocha.css', function(req, res) {
   res.type('css');
   res.send(file('./node_modules/mocha/mocha.css'));
 });
 
+// Mocha
 app.get('/mocha.js', function(req, res) {
   res.type('text/javascript');
   res.send(file('./node_modules/mocha/mocha.js'));
 });
 
+// Client-side JavaScript
 app.get('/tubbs.js', function(req, res) {
   exec('browserify test/server/index.js -d', function(e, stdout, stderr) {
     if (e) throw e;
@@ -50,6 +53,7 @@ app.get('/tubbs.js', function(req, res) {
   });
 });
 
+// HTML
 app.get('/', function(req, res) {
   res.send(file('./test/server/index.html'))
 });
@@ -63,34 +67,49 @@ app.get('/not-json', function(req, res) {
   res.send('This is not JSON.');
 });
 
+// Get all users (fetch)
 app.get('/users', function(req, res){
-  res.send([getDummyUser()]);
+  res.send(DB);
 });
 
 // Get a specific user
 app.get('/users/:id', function(req, res) {
-  var user = getDummyUser();
-  user.username = req.params.id;
-  res.send(user);
+  var user = DB[req.params.id];
+  res.status(user ? 200 : 404).send(user);
 });
 
 // Create a new user
 app.post('/users', function(req, res){
   var user = req.body;
-  user.username = (user.first + user.last).toLowerCase();
+  var id = (user.first + user.last).toLowerCase();
+  user.username = id;
+  DB[id] = user;
   res.send(user);
 });
 
 // Update a user
 app.put('/users/:id', function(req, res){
-  req.body.email = 'hahahahah';
-  res.send(req.body);
+  var user = DB[req.params.id];
+
+  if (!user) {
+    res.status(404).send({});
+    return;
+  }
+
+  var data = req.body;
+  Object.keys(data).forEach(function(name) {
+    if (name != 'username') user[name] = data[name];
+  });
+
+  res.send(DB[req.params.id] = data);
 });
 
 // Delete a user
 app.delete('/users/:id', function(req, res){
-  res.send({});
+  var user = DB[req.params.id];
+  res.status(user ? (delete DB[req.params.id], 200) : 404).send({});
 });
 
+// Start the server
 app.listen(3000);
 console.log('Server started at http://localhost:3000/');
