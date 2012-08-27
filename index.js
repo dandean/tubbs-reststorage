@@ -252,17 +252,21 @@ RestStorage.prototype.delete = function(record, callback) {
   var Type = this.DataType;
   var primaryKey = Type.primaryKey;
 
-  if (Object.prototype.toString.call(record).match(/\[object (String|Number)\]/)) {
-    var r = record;
-    record = {};
-    record[primaryKey] = r;
-  }
+  var id;
 
-  if (record[primaryKey] in this.data) {
-    delete this.data[record[primaryKey]];
-    callback(null, record);
-    return;
-  }
+  if (!Object.prototype.toString.call(record).match(/\[object (String|Number)\]/)) {
+    id = record[primaryKey];
+  } else id = record;
+
+  // Delete local data for model:
+  if (id in this.data) delete this.data[id];
+
+  // Delete server data for model:
+  request.call(
+    this,
+    { method: 'DELETE', id: id },
+    function(e, result) { callback(e, null); }
+  );
 };
 
 module.exports = RestStorage;
