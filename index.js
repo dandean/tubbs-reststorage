@@ -92,7 +92,15 @@ function request(options, callback) {
 
   xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
   xhr.setRequestHeader('Accept', 'application/json');
-  xhr.setRequestHeader('Content-type', 'application/json; charset=utf8');
+
+  var hasBody = !!method.match(/^PUT|PATCH|POST$/) && options.data;
+  if (hasBody) {
+    // Only specific HTTP methods can haev data. Otherwise the server
+    // could choke on the invalid requuest.
+    // TODO: Should an error be thrown if the user tries to send data
+    // via an incorrect HTTP method?
+    xhr.setRequestHeader('Content-type', 'application/json; charset=utf8');
+  }
 
   if (config.headers) for (var name in config.headers) {
     // Configuration-specific headers.
@@ -104,7 +112,7 @@ function request(options, callback) {
     xhr.setRequestHeader(name, options.headers[name]);
   }
 
-  xhr.send(options.data ? JSON.stringify(options.data) : null);
+  xhr.send(hasBody ? JSON.stringify(options.data) : null);
 }
 
 /**
