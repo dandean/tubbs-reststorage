@@ -38,6 +38,15 @@ function RestStorage(config) {
  * stringified as JSON before sending.
 **/
 function request(options, callback) {
+
+  if (Object.prototype.toString.call(options) !== '[object Object]') {
+    throw createError('ArgumentError', '"options" argument must be an Object.');
+  }
+
+  if (Object.prototype.toString.call(callback) !== '[object Function]') {
+    throw createError('ArgumentError', '"callback" argument must be a Function.');
+  }
+
   var config = this.config;
   var xhr = new XMLHttpRequest();
 
