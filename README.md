@@ -13,9 +13,12 @@ var RestStorage = require('tubbs-reststorage');
 var User = Tubbs.create({
 
   // Persist our data via Rest
-  dataStore: new RestStorage({
-    url: '/users',
-    headers: { 'X_CSRF_TOKEN': 'b0113d8b-a4b3-c7db-0ec4-c0eb9c02e3a3' }
+  dataStore: {
+    type: RestStorage,
+    options: {
+      url: '/users',
+      headers: { 'X_CSRF_TOKEN': 'b0113d8b-a4b3-c7db-0ec4-c0eb9c02e3a3' }
+    }
   }),
 
   // ...
