@@ -11,11 +11,12 @@ describe('RestStorage', function() {
   var User, user;
 
   before(function() {
-    User = Tubbs.create({
-      // Persist our data with Riak
-      dataStore: new RestStorage({
-        url: '/users'
-      }),
+    User = Tubbs.define({
+      // Persist our data via REST
+      dataStore: {
+        type: RestStorage,
+        options: { url: '/users' }
+      },
 
       primaryKey: 'username',
       

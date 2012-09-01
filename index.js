@@ -15,13 +15,15 @@ function createError(name, message) {
 
 /**
  * new RestStorage(data)
+ * - constructor (Tubbs): The Tubbs model type to persist.
  * - config (Object): Configuration options.
  *
  * TODO: rename this module BrowserRest.
  * TODO: create server-side variant.
  * TODO: OR, use node's Request module and its browserland variant.
 **/
-function RestStorage(config) {
+function RestStorage(constructor, config) {
+  this.Model = constructor;
   this.config = config;
   this.ready = false;
 
@@ -142,11 +144,11 @@ function fetch(callback) {
 RestStorage.prototype.all = all;
 function all(callback) {
   var result = [];
-  var Type = this.DataType;
+  var Model = this.Model;
 
   Object.keys(this.data).forEach(function(id) {
     var doc = this.data[id];
-    if (doc instanceof Type === false) doc = new Type(doc);
+    if (doc instanceof Model === false) doc = new Model(doc);
     result.push(doc);
   }.bind(this));
 
@@ -161,10 +163,10 @@ function all(callback) {
 **/
 RestStorage.prototype.find = find;
 function find(id, callback) {
-  var Type = this.DataType;
+  var Model = this.Model;
   if (id in this.data) {
     var doc = this.data[id];
-    if (doc instanceof Type === false) doc = new Type(doc);
+    if (doc instanceof Model === false) doc = new Model(doc);
     callback(null, doc);
     return;
   }
@@ -184,12 +186,12 @@ function where(args, filter, callback) {
   // TODO: decompose and recompose filter so that it is executed outside of
   // TODO: its originating clusure. This is needed so that the RestStore
   // TODO: API operates the same as other server-based map/reduce API's.
-  var Type = this.DataType;
+  var Model = this.Model;
   var result = [];
   Object.keys(this.data).forEach(function(id) {
     var doc = this.data[id];
     if (filter(doc, args)) {
-      if (doc instanceof Type === false) doc = new Type(doc);
+      if (doc instanceof Model === false) doc = new Model(doc);
       result.push(doc);
     }
   }.bind(this));
@@ -204,8 +206,8 @@ function where(args, filter, callback) {
 **/
 RestStorage.prototype.save = save;
 function save(record, callback) {
-  var Type = this.DataType;
-  var primaryKey = Type.primaryKey;
+  var Model = this.Model;
+  var primaryKey = Model.primaryKey;
 
   if (!record) {
     callback(createError('ArgumentError', 'Cannot save null model.'));
@@ -249,8 +251,8 @@ function save(record, callback) {
  * Deletes the provides object from the database.
 **/
 RestStorage.prototype.delete = function(record, callback) {
-  var Type = this.DataType;
-  var primaryKey = Type.primaryKey;
+  var Model = this.Model;
+  var primaryKey = Model.primaryKey;
 
   var id;
 
