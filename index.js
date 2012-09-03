@@ -184,7 +184,7 @@ function find(id, callback) {
 RestStorage.prototype.where = where;
 function where(args, filter, callback) {
   // TODO: decompose and recompose filter so that it is executed outside of
-  // TODO: its originating clusure. This is needed so that the RestStore
+  // TODO: its originating closure. This is needed so that the RestStore
   // TODO: API operates the same as other server-based map/reduce API's.
   var Model = this.Model;
   var result = [];
@@ -206,20 +206,18 @@ function where(args, filter, callback) {
 **/
 RestStorage.prototype.save = save;
 function save(record, callback) {
+  if (!record) {
+    return callback(createError('ArgumentError', 'Cannot save null model.'));
+  }
+
   var Model = this.Model;
   var primaryKey = Model.primaryKey;
 
-  if (!record) {
-    callback(createError('ArgumentError', 'Cannot save null model.'));
-    return;
-  }
-
   // Could be create or update...
-  var isNew = false;
-  var id = record[primaryKey];
-  if (id === undefined || id === '' || id === null || id === guid.EMPTY) {
-    isNew = true;
-  }
+  var isNew = record.isNew;
+
+  // Store ID from before save. If record is new, this will change.
+  var id = record.id;
 
   request.call(
     this, {
@@ -236,7 +234,7 @@ function save(record, callback) {
             // TODO: Should we do some sort of batched change set? Should it be silent?
             record[field] = result[field];
           });
-          if (isNew) this.data[result[primaryKey]] = record;
+          if (isNew) this.data[record.id] = record;
         }
       }
       callback(e, record);
@@ -257,7 +255,8 @@ RestStorage.prototype.delete = function(record, callback) {
   var id;
 
   if (!Object.prototype.toString.call(record).match(/\[object (String|Number)\]/)) {
-    id = record[primaryKey];
+    // If a model instance was provided, pull the id from the instance:
+    id = record.id;
   } else id = record;
 
   // Delete local data for model:

@@ -50,7 +50,8 @@ describe('RestStorage', function() {
       email: "tubby@tubbs.co"
     });
 
-    assert.equal(undefined, user.username);
+    // Username should be in client ID format:
+    assert.ok(user.username.match(/__\d+__/));
 
     user.save(function(e, result){
       assert.equal(null, e);
