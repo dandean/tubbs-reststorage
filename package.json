@@ -19,9 +19,7 @@
   ],
   "author": "Dan Dean",
   "license": "MIT",
-  "dependencies": {
-    "guid": "*"
-  },
+  "dependencies": {},
   "devDependencies": {
     "mocha": "*",
     "express": "*",

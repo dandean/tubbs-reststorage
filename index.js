@@ -1,5 +1,3 @@
-var guid = require("guid");
-
 /**
  * createError(name, message) -> Error
  * - name (String): Name of the error, such as 'ArgumentError'.
