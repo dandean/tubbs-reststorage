@@ -129,7 +129,15 @@ function fetch(callback) {
       callback(e);
       return;
     }
-    this.data = data;
+    if (Array.isArray(data)) {
+      this.data = {};
+      var primaryKey = this.Model.primaryKey;
+      data.forEach(function(item) {
+        this.data[item[primaryKey]] = item;
+      }.bind(this));
+    } else {
+      this.data = data;
+    }
     this.ready = true;
     callback();
   }.bind(this));
