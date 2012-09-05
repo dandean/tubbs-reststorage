@@ -10,7 +10,11 @@ Example:
 var Tubbs = require('tubbs');
 var RestStorage = require('tubbs-reststorage');
 
-var User = Tubbs.create({
+var User = Tubbs.define({
+
+  fields: {
+    // ...
+  },
 
   // Persist our data via Rest
   dataStore: {
