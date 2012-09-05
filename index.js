@@ -123,6 +123,7 @@ function request(options, callback) {
 **/
 RestStorage.prototype.fetch = fetch;
 function fetch(callback) {
+  callback = callback || function() {};
   request.call(this, { method: 'GET' }, function(e, data) {
     if (e) {
       callback(e);
