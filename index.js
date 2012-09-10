@@ -124,20 +124,27 @@ function request(options, callback) {
 RestStorage.prototype.fetch = fetch;
 function fetch(callback) {
   callback = callback || function() {};
+  var Model = this.Model;
+  var t = this;
   request.call(this, { method: 'GET' }, function(e, data) {
     if (e) {
       callback(e);
       return;
     }
+
+    this.data = {};
     if (Array.isArray(data)) {
-      this.data = {};
       var primaryKey = this.Model.primaryKey;
       data.forEach(function(item) {
-        this.data[item[primaryKey]] = item;
+        this.data[item[primaryKey]] = new Model(item);
       }.bind(this));
+
     } else {
-      this.data = data;
+      Object.keys(data).forEach(function(key) {
+        t.data[key] = new Model(data[key]);
+      });
     }
+
     this.ready = true;
     callback();
   }.bind(this));
