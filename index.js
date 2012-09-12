@@ -76,11 +76,13 @@ function request(options, callback) {
 
     var status = xhr.status;
     if (status < 200 || status > 399) {
+      var name = 'HttpError';
+      var msg = (xhr.status + ' ' + xhr.statusText).trim();
+
       if (status === 0) {
-        error = createError('ConnectionError', 'Could not connect');
-      } else if (status >= 500) {
-        error = createError('ServerError');
-      } else error = createError('HttpError');
+        name = 'ConnectionError', msg = 'Could not connect: ' + msg;
+      } else if (status >= 500) name = 'ServerError';
+      error = createError(name, msg);
     }
 
     if (!error && xhr.getResponseHeader('Content-Type').indexOf('/json') == -1) {
