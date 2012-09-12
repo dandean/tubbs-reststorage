@@ -50,7 +50,7 @@ function request(options, callback) {
   var config = this.config;
   var xhr = new XMLHttpRequest();
 
-  var url = config.url;
+  var url = options.url || config.url;
   var method = options.method || 'GET';
 
   if (method.match(/^PUT|DELETE|PATCH$/)) {
