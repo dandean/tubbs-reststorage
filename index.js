@@ -124,32 +124,53 @@ function request(options, callback) {
  * Fetches all data from the endpoint and sets the internal collection to the result.
 **/
 RestStorage.prototype.fetch = fetch;
-function fetch(callback) {
+function fetch(options, callback) {
+  if (!options && !callback) {
+    options = {};
+    callback = function() {};
+
+  } else if (options && Object.prototype.toString.call(options) == '[object Function]') {
+    callback = options;
+    options = {};
+  }
+
+  options = options || {};
   callback = callback || function() {};
+
   var Model = this.Model;
   var t = this;
-  request.call(this, { method: 'GET' }, function(e, data) {
-    if (e) {
-      callback(e);
-      return;
-    }
 
-    this.data = {};
-    if (Array.isArray(data)) {
-      var primaryKey = this.Model.primaryKey;
-      data.forEach(function(item) {
-        this.data[item[primaryKey]] = new Model(item);
-      }.bind(this));
+  request.call(
+    this,
+    {
+      method: options.method || 'GET',
+      data: options.data,
+      headers: options.headers,
+      url: options.url
+    },
+    function(e, data) {
+      if (e) {
+        callback(e);
+        return;
+      }
 
-    } else {
-      Object.keys(data).forEach(function(key) {
-        t.data[key] = new Model(data[key]);
-      });
-    }
+      this.data = {};
+      if (Array.isArray(data)) {
+        var primaryKey = this.Model.primaryKey;
+        data.forEach(function(item) {
+          this.data[item[primaryKey]] = new Model(item);
+        }.bind(this));
 
-    this.ready = true;
-    callback();
-  }.bind(this));
+      } else {
+        Object.keys(data).forEach(function(key) {
+          t.data[key] = new Model(data[key]);
+        });
+      }
+
+      this.ready = true;
+      callback();
+    }.bind(this)
+  );
 }
 
 /**
