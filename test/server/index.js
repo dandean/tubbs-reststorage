@@ -11,47 +11,44 @@ describe('RestStorage', function() {
   var User, user;
 
   before(function() {
-    User = Tubbs.define({
-      // Persist our data via REST
-      dataStore: {
-        type: RestStorage,
-        options: { url: '/users' }
-      },
+    User = function(data) {
+      this.setData(data);
+    };
 
+    Tubbs(User, {
+      // Persist our data via REST
+      dataStore: new RestStorage(User, { url: '/users' }),
       primaryKey: 'username',
-      
-      fields: {
-        username: undefined,
-        first: "Rad",
-        last: undefined,
-        email: undefined
-      },
-    
-      virtual: {
-        name: function() {
-          return ((this.first || '') + ' ' + (this.last || '')).trim();
-        }
-      }
+      basicProperties: ['username', 'first', 'last', 'email']
     });
+
+    Object.defineProperty(User, 'fullname', {
+      get: function() {
+        return ((this.first || '') + ' ' + (this.last || '')).trim();
+      },
+      enumerable: true
+    });
+
   });
 
   it('should fetch data from the server', function(done) {
     User.fetch(function() {
-      assert.ok(Object.keys(User.dataStore.data).length > 0);
-      done();
+      User.all(function(e, result) {
+        assert.ok(result.length > 0);
+        done();
+      })
     });
   });
 
   it('should save a new model to the server', function(done) {
-
     user = new User({
       first: "Dan",
       last: "Dean",
       email: "tubby@tubbs.co"
     });
 
-    // Username should be in client ID format:
-    assert.ok(user.username.match(/__\d+__/));
+    assert.ok(user.isNew);
+    assert.ok(user.id.match(/^cid\d+$/));
 
     user.save(function(e, result){
       assert.equal(null, e);
@@ -64,25 +61,35 @@ describe('RestStorage', function() {
     });
   });
 
-  it('should get find a model in the collection', function(done) {
-    User.find('dandean', function(e, result) {
-      assert.equal(null, e);
-      assert.equal(user, result);
-      assert.equal('dandean', user.username);
-      done();
+  it('should find a model in the collection', function(done) {
+    user = new User({
+      first: "Dan",
+      last: "Dean",
+      email: "tubby@tubbs.co"
+    });
+
+    user.save(function(e, saveResult){
+      User.find('dandean', function(e, findResult) {
+        assert.equal(null, e);
+        assert.equal(user, findResult);
+        assert.equal('dandean', findResult.username);
+        done();
+      });
     });
   });
 
   it('should update a model on the server', function(done) {
-    user.first = "Chest";
-    user.save(function(e, result) {
-      assert.equal(null, e);
-      assert.equal(user, result);
-      assert.equal('dandean', user.username);
-      assert.equal('Chest', user.first);
-      assert.equal('Dean', user.last);
-      assert.equal('tubby@tubbs.co', user.email);
-      done();
+    User.find('dandean', function(e, findResult) {
+      findResult.first = "Chest";
+      findResult.save(function(e, saveResult) {
+        assert.equal(null, e);
+        assert.equal(findResult, saveResult);
+        assert.equal('dandean', saveResult.username);
+        assert.equal('Chest', saveResult.first);
+        assert.equal('Dean', saveResult.last);
+        assert.equal('tubby@tubbs.co', saveResult.email);
+        done();
+      });
     });
   });
 

@@ -51,6 +51,9 @@ function request(options, callback) {
   var xhr = new XMLHttpRequest();
 
   var url = options.url || config.url;
+  if (Object.prototype.toString.call(url) == '[object Function]') {
+    url = url();
+  }
   var method = options.method || 'GET';
 
   if (method.match(/^PUT|DELETE|PATCH$/)) {
@@ -117,167 +120,180 @@ function request(options, callback) {
   xhr.send(hasBody ? JSON.stringify(options.data) : null);
 }
 
-/**
- * RestStorage#fetch(callback)
- * - callback (Function): Callback function can receive an error.
- *
- * Fetches all data from the endpoint and sets the internal collection to the result.
-**/
-RestStorage.prototype.fetch = fetch;
-function fetch(options, callback) {
-  if (!options && !callback) {
-    options = {};
-    callback = function() {};
+Object.defineProperties(RestStorage.prototype, {
+  /**
+   * RestStorage#fetch(options, callback)
+   * - callback (Function): Callback function can receive an error.
+   *
+   * Fetches all data from the endpoint and sets the internal collection to the result.
+  **/
+  fetch: {
+    value: function(options, callback) {
+      if (!options && !callback) {
+        options = {};
+        callback = function() {};
 
-  } else if (options && Object.prototype.toString.call(options) == '[object Function]') {
-    callback = options;
-    options = {};
-  }
+      } else if (options && Object.prototype.toString.call(options) == '[object Function]') {
+        callback = options;
+        options = {};
+      }
 
-  options = options || {};
-  callback = callback || function() {};
+      options = options || {};
+      callback = callback || function() {};
 
-  var Model = this.Model;
-  var t = this;
+      var Model = this.Model;
+      var t = this;
 
-  request.call(
-    this,
-    {
-      method: options.method || 'GET',
-      data: options.data,
-      headers: options.headers,
-      url: options.url
+      request.call(
+        this,
+        {
+          method: options.method || 'GET',
+          data: options.data,
+          headers: options.headers,
+          url: options.url
+        },
+        function(e, data) {
+          if (e) {
+            callback(e);
+            return;
+          }
+
+          this.data = {};
+          if (Array.isArray(data)) {
+            var primaryKey = this.Model.primaryKey;
+            data.forEach(function(item) {
+              this.data[item[primaryKey]] = new Model(item);
+            }.bind(this));
+
+          } else {
+            Object.keys(data).forEach(function(key) {
+              t.data[key] = new Model(data[key]);
+            });
+          }
+
+          this.ready = true;
+          callback();
+        }.bind(this)
+      );
     },
-    function(e, data) {
-      if (e) {
-        callback(e);
+    configurable: true
+  },
+
+  /**
+   * RestStorage#all(callback(e, result))
+   *
+   * Provides an Array of all records in the dataset.
+  **/
+  all: {
+    value: function(callback) {
+      var result = [];
+
+      Object.keys(this.data).forEach(function(id) {
+        var doc = this.data[id];
+        result.push(doc);
+      }.bind(this));
+
+      callback(null, result);
+    },
+    enumerable: true
+  },
+
+  /**
+   * RestStorage#find(id, callback(e, result))
+   * - id (?): The record ID in the database
+   *
+   * Finds a single record in the database.
+  **/
+  find: {
+    value: function(id, callback) {
+      if (id in this.data) {
+        var doc = this.data[id];
+        callback(null, doc);
         return;
       }
-
-      this.data = {};
-      if (Array.isArray(data)) {
-        var primaryKey = this.Model.primaryKey;
-        data.forEach(function(item) {
-          this.data[item[primaryKey]] = new Model(item);
-        }.bind(this));
-
-      } else {
-        Object.keys(data).forEach(function(key) {
-          t.data[key] = new Model(data[key]);
-        });
-      }
-
-      this.ready = true;
-      callback();
-    }.bind(this)
-  );
-}
-
-/**
- * RestStorage#all(callback(e, result))
- *
- * Provides an Array of all records in the dataset.
-**/
-RestStorage.prototype.all = all;
-function all(callback) {
-  var result = [];
-  var Model = this.Model;
-
-  Object.keys(this.data).forEach(function(id) {
-    var doc = this.data[id];
-    if (doc instanceof Model === false) doc = new Model(doc);
-    result.push(doc);
-  }.bind(this));
-
-  callback(null, result);
-};
-
-/**
- * RestStorage#find(id, callback(e, result))
- * - id (?): The record ID in the database
- *
- * Finds a single record in the database.
-**/
-RestStorage.prototype.find = find;
-function find(id, callback) {
-  var Model = this.Model;
-  if (id in this.data) {
-    var doc = this.data[id];
-    if (doc instanceof Model === false) doc = new Model(doc);
-    callback(null, doc);
-    return;
-  }
-  callback(new Error("Document not found."), null);
-};
-
-/**
- * RestStorage#where(args, filter, callback(e, result))
- * - args (Object): An object hash of named arguments which becomes the 2nd arg passed to `filter`.
- * - filter (Function): A function executed against each document which returns
- * `true` if the document should be included in the result.
- *
- * Provides an Array of all records which pass the `filter`.
-**/
-RestStorage.prototype.where = where;
-function where(args, filter, callback) {
-  // TODO: decompose and recompose filter so that it is executed outside of
-  // TODO: its originating closure. This is needed so that the RestStore
-  // TODO: API operates the same as other server-based map/reduce API's.
-  var Model = this.Model;
-  var result = [];
-  Object.keys(this.data).forEach(function(id) {
-    var doc = this.data[id];
-    if (filter(doc, args)) {
-      if (doc instanceof Model === false) doc = new Model(doc);
-      result.push(doc);
-    }
-  }.bind(this));
-  callback(null, result);
-};
-
-/**
- * RestStorage#save(record, callback(e, result))
- * - record (Object): An object (or JSON serializable object) to be saved to the database.
- *
- * Saves the provides object to the database.
-**/
-RestStorage.prototype.save = save;
-function save(record, callback) {
-  if (!record) {
-    return callback(createError('ArgumentError', 'Cannot save null model.'));
-  }
-
-  var Model = this.Model;
-  var primaryKey = Model.primaryKey;
-
-  // Could be create or update...
-  var isNew = record.isNew;
-
-  // Store ID from before save. If record is new, this will change.
-  var id = record.id;
-
-  request.call(
-    this, {
-      method: isNew ? 'POST' : 'PUT',
-      id: isNew ? undefined : id,
-      data: record
+      callback(new Error("Document not found."), null);
     },
-    function(e, result) {
-      if (!e) {
-        if (!result || primaryKey in result === false) {
-          e = createError('HttpResponseError', 'Response is missing a primaryKey and cannot be used.');
-        } else {
-          Object.keys(result).forEach(function(field) {
-            // TODO: Should we do some sort of batched change set? Should it be silent?
-            record[field] = result[field];
-          });
-          if (isNew) this.data[record.id] = record;
+    enumerable: true
+  },
+
+  /**
+   * RestStorage#where(args, filter, callback(e, result))
+   * - args (Object): An object hash of named arguments which becomes the 2nd arg passed to `filter`.
+   * - filter (Function): A function executed against each document which returns
+   * `true` if the document should be included in the result.
+   *
+   * Provides an Array of all records which pass the `filter`.
+  **/
+  where: {
+    value: function(args, filter, callback) {
+      // TODO: decompose and recompose filter so that it is executed outside of
+      // TODO: its originating closure. This is needed so that the RestStore
+      // TODO: API operates the same as other server-based map/reduce API's.
+      var result = [];
+      Object.keys(this.data).forEach(function(id) {
+        var doc = this.data[id];
+        if (filter(doc, args)) {
+          result.push(doc);
         }
+      }.bind(this));
+      callback(null, result);
+    },
+    enumerable: true
+  },
+
+  /**
+   * RestStorage#save(record, callback(e, result))
+   * - record (Object): An object (or JSON serializable object) to be saved to the database.
+   *
+   * Saves the provides object to the database.
+  **/
+  save: {
+    value: function(record, callback) {
+      if (!record) {
+        return callback(createError('ArgumentError', 'Cannot save null model.'));
       }
-      callback(e, record);
-    }.bind(this)
-  );
-};
+
+      var Model = this.Model;
+      var primaryKey = Model.primaryKey;
+
+      if (record instanceof this.Model === false) {
+        record = new this.Model(record);
+      }
+
+      // Could be create or update...
+      var isNew = record.isNew;
+
+      // Store ID from before save. If record is new, this will change.
+      var id = record.id;
+
+      request.call(
+        this, {
+          method: isNew ? 'POST' : 'PUT',
+          id: isNew ? undefined : id,
+          data: record
+        },
+        function(e, result) {
+          if (!e) {
+            if (!result || primaryKey in result === false) {
+              e = createError('HttpResponseError', 'Response is missing a primaryKey and cannot be used.');
+            } else {
+              Object.keys(result).forEach(function(field) {
+                // TODO: Should we do some sort of batched change set? Should it be silent?
+                record[field] = result[field];
+              });
+              if (isNew) this.data[record.id] = record;
+            }
+          }
+          callback(e, record);
+        }.bind(this)
+      );
+
+    },
+    enumerable: true
+  }
+
+});
+
 
 /**
  * RestStorage#delete(record, callback(e, result))
