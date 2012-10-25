@@ -24,6 +24,8 @@ function RestStorage(constructor, config) {
   this.Model = constructor;
   this.config = config;
   this.ready = false;
+  this.parse = config.parse || JSON.parse;
+  this.serialize = config.serialize || JSON.stringify;
 
   // Hash of Type'd models.
   this.data = {};
@@ -47,6 +49,7 @@ function request(options, callback) {
     throw createError('ArgumentError', '"callback" argument must be a Function.');
   }
 
+  var t = this;
   var config = this.config;
   var xhr = new XMLHttpRequest();
 
@@ -74,7 +77,7 @@ function request(options, callback) {
     var data;
     var error;
     try {
-      data = JSON.parse(xhr.responseText)
+      data = t.parse(xhr.responseText)
     } catch (e) {}
 
     var status = xhr.status;
@@ -93,7 +96,7 @@ function request(options, callback) {
     }
 
     callback(error, data);
-  }.bind(this);
+  };
 
   xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
   xhr.setRequestHeader('Accept', 'application/json');
@@ -117,7 +120,7 @@ function request(options, callback) {
     xhr.setRequestHeader(name, options.headers[name]);
   }
 
-  xhr.send(hasBody ? JSON.stringify(options.data) : null);
+  xhr.send(hasBody ? this.serialize(options.data) : null);
 }
 
 Object.defineProperties(RestStorage.prototype, {

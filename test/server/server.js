@@ -23,8 +23,8 @@ app.all('*', function(req, res, next) {
 var DB = {
   "rad": {
     "username": 'rad',
-    "first": 'Rad',
-    "last": 'Radical',
+    "first_name": 'Rad',
+    "last_name": 'Radical',
     "email": 'rad@radical.com'
   }
 };
@@ -81,7 +81,7 @@ app.get('/users/:id', function(req, res) {
 // Create a new user
 app.post('/users', function(req, res){
   var user = req.body;
-  var id = (user.first + user.last).toLowerCase();
+  var id = (user.first_name + user.last_name).toLowerCase();
   user.username = id;
   DB[id] = user;
   res.send(user);
