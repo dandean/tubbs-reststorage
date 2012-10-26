@@ -40,7 +40,48 @@ describe('RestStorage', function() {
 
   });
 
+  it('should load provided data from Object format', function(done) {
+    User.dataStore.data = {};
+    var data = {
+      "rad": {
+        "username": 'rad',
+        "firstName": 'Rad',
+        "lastName": 'Radical',
+        "email": 'rad@radical.com'
+      }
+    };
+
+    User.use(data, function() {
+      User.all(function(e, result) {
+        assert.ok(result.length === 1);
+        assert.strictEqual(true, User.dataStore.ready);
+        done();
+      })
+    });
+  });
+
+  it('should load provided data from String format', function(done) {
+    User.dataStore.data = {};
+    var data = JSON.stringify({
+      "rad": {
+        "username": 'rad',
+        "first_name": 'Rad',
+        "last_name": 'Radical',
+        "email": 'rad@radical.com'
+      }
+    });
+
+    User.use(data, function() {
+      User.all(function(e, result) {
+        assert.ok(result.length === 1);
+        assert.strictEqual(true, User.dataStore.ready);
+        done();
+      })
+    });
+  });
+
   it('should fetch data from the server', function(done) {
+    User.dataStore.data = {};
     User.fetch(function() {
       User.all(function(e, result) {
         assert.ok(result.length > 0);

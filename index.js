@@ -1,3 +1,5 @@
+module.exports = RestStorage;
+
 /**
  * createError(name, message) -> Error
  * - name (String): Name of the error, such as 'ArgumentError'.
@@ -124,6 +126,41 @@ function request(options, callback) {
 }
 
 Object.defineProperties(RestStorage.prototype, {
+
+  /**
+   * RestStorage#use(data, callback)
+   * - data (Object|Array|String): Data to populate the datastore with.
+   * - callback (Function): Callback function can receive an error.
+   *
+   * Fetches all data from the endpoint and sets the internal collection to the result.
+  **/
+  use: {
+    value: function(data, callback) {
+      var Model = this.Model;
+      var primaryKey = Model.primaryKey;
+      var t = this;
+      this.data = {};
+
+      if (Object.prototype.toString.call(data) == '[object String]') {
+        data = this.parse(data);
+      }
+
+      if (Array.isArray(data)) {
+        data.forEach(function(item) {
+          Model.emit('add', t.data[item[primaryKey]] = new Model(item))
+        });
+
+      } else {
+        Object.keys(data).forEach(function(key) {
+          Model.emit('add', t.data[key] = new Model(data[key]));
+        });
+      }
+      this.ready = true;
+      if (callback) callback();
+    },
+    enumerable: true
+  },
+
   /**
    * RestStorage#fetch(options, callback)
    * - callback (Function): Callback function can receive an error.
@@ -144,8 +181,6 @@ Object.defineProperties(RestStorage.prototype, {
       options = options || {};
       callback = callback || function() {};
 
-      var Model = this.Model;
-      var primaryKey = Model.primaryKey;
       var t = this;
 
       request.call(
@@ -162,21 +197,8 @@ Object.defineProperties(RestStorage.prototype, {
             return;
           }
 
-          this.data = {};
-          if (Array.isArray(data)) {
-            data.forEach(function(item) {
-              Model.emit('add', t.data[item[primaryKey]] = new Model(item))
-            });
-
-          } else {
-            Object.keys(data).forEach(function(key) {
-              Model.emit('add', t.data[key] = new Model(data[key]));
-            });
-          }
-
-          this.ready = true;
-          callback();
-        }.bind(this)
+          t.use(data, callback);
+        }
       );
     },
     configurable: true
@@ -293,37 +315,37 @@ Object.defineProperties(RestStorage.prototype, {
 
     },
     enumerable: true
+  },
+
+  /**
+   * RestStorage#delete(record, callback(e, result))
+   * - record (Object): An object (or JSON serializable object) to be deleted from the database.
+   *
+   * Deletes the provides object from the database.
+  **/
+  delete: {
+    value: function(record, callback) {
+      var Model = this.Model;
+      var primaryKey = Model.primaryKey;
+
+      var id;
+
+      if (!Object.prototype.toString.call(record).match(/\[object (String|Number)\]/)) {
+        // If a model instance was provided, pull the id from the instance:
+        id = record.id;
+      } else id = record;
+
+      // Delete local data for model:
+      if (id in this.data) delete this.data[id];
+
+      // Delete server data for model:
+      request.call(
+        this,
+        { method: 'DELETE', id: id },
+        function(e, result) { callback(e, null); }
+      );
+    },
+    enumerable: true
   }
 
 });
-
-
-/**
- * RestStorage#delete(record, callback(e, result))
- * - record (Object): An object (or JSON serializable object) to be deleted from the database.
- *
- * Deletes the provides object from the database.
-**/
-RestStorage.prototype.delete = function(record, callback) {
-  var Model = this.Model;
-  var primaryKey = Model.primaryKey;
-
-  var id;
-
-  if (!Object.prototype.toString.call(record).match(/\[object (String|Number)\]/)) {
-    // If a model instance was provided, pull the id from the instance:
-    id = record.id;
-  } else id = record;
-
-  // Delete local data for model:
-  if (id in this.data) delete this.data[id];
-
-  // Delete server data for model:
-  request.call(
-    this,
-    { method: 'DELETE', id: id },
-    function(e, result) { callback(e, null); }
-  );
-};
-
-module.exports = RestStorage;
