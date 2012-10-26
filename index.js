@@ -145,6 +145,7 @@ Object.defineProperties(RestStorage.prototype, {
       callback = callback || function() {};
 
       var Model = this.Model;
+      var primaryKey = Model.primaryKey;
       var t = this;
 
       request.call(
@@ -163,14 +164,13 @@ Object.defineProperties(RestStorage.prototype, {
 
           this.data = {};
           if (Array.isArray(data)) {
-            var primaryKey = this.Model.primaryKey;
             data.forEach(function(item) {
-              this.data[item[primaryKey]] = new Model(item);
-            }.bind(this));
+              Model.emit('add', t.data[item[primaryKey]] = new Model(item))
+            });
 
           } else {
             Object.keys(data).forEach(function(key) {
-              t.data[key] = new Model(data[key]);
+              Model.emit('add', t.data[key] = new Model(data[key]));
             });
           }
 
@@ -259,9 +259,7 @@ Object.defineProperties(RestStorage.prototype, {
       var Model = this.Model;
       var primaryKey = Model.primaryKey;
 
-      if (record instanceof this.Model === false) {
-        record = new this.Model(record);
-      }
+      if (record instanceof Model === false) record = new Model(record);
 
       // Could be create or update...
       var isNew = record.isNew;
@@ -284,7 +282,9 @@ Object.defineProperties(RestStorage.prototype, {
                 // TODO: Should we do some sort of batched change set? Should it be silent?
                 record[field] = result[field];
               });
-              if (isNew) this.data[record.id] = record;
+              if (isNew) {
+                Model.emit('add', this.data[record.id] = record);
+              }
             }
           }
           callback(e, record);

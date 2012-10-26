@@ -1,6 +1,6 @@
 {
   "name": "tubbs-reststorage",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "REST adaptor for Tubbs",
   "main": "index.js",
   "scripts": {
@@ -24,6 +24,7 @@
     "mocha": "*",
     "express": "*",
     "tubbs": "*",
-    "browserify": "*"
+    "browserify": "*",
+    "json-transformer": "*"
   }
 }
