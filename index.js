@@ -33,15 +33,7 @@ function RestStorage(constructor, config) {
   this.data = {};
 }
 
-/**
- * request(options, callback) -> undefined
- * - options (Object): Optional configuration options.
- * - callback (Function): Callback function when request is complete.
- *
- * Makes a request for JSON from a server. If data is provided, it will be
- * stringified as JSON before sending.
-**/
-function request(options, callback) {
+function request(store, options, callback) {
 
   if (Object.prototype.toString.call(options) !== '[object Object]') {
     throw createError('ArgumentError', '"options" argument must be an Object.');
@@ -51,8 +43,7 @@ function request(options, callback) {
     throw createError('ArgumentError', '"callback" argument must be a Function.');
   }
 
-  var t = this;
-  var config = this.config;
+  var config = store.config;
   var xhr = new XMLHttpRequest();
 
   var url = options.url || config.url;
@@ -79,7 +70,7 @@ function request(options, callback) {
     var data;
     var error;
     try {
-      data = t.parse(xhr.responseText)
+      data = store.parse(xhr.responseText)
     } catch (e) {}
 
     var status = xhr.status;
@@ -105,7 +96,7 @@ function request(options, callback) {
 
   var hasBody = !!method.match(/^PUT|PATCH|POST$/) && options.data;
   if (hasBody) {
-    // Only specific HTTP methods can haev data. Otherwise the server
+    // Only specific HTTP methods can have data. Otherwise the server
     // could choke on the invalid requuest.
     // TODO: Should an error be thrown if the user tries to send data
     // via an incorrect HTTP method?
@@ -183,7 +174,7 @@ Object.defineProperties(RestStorage.prototype, {
 
       var t = this;
 
-      request.call(
+      request(
         this,
         {
           method: options.method || 'GET',
@@ -289,8 +280,8 @@ Object.defineProperties(RestStorage.prototype, {
       // Store ID from before save. If record is new, this will change.
       var id = record.id;
 
-      request.call(
-        this, {
+      request(this,
+        {
           method: isNew ? 'POST' : 'PUT',
           id: isNew ? undefined : id,
           data: record
@@ -339,8 +330,7 @@ Object.defineProperties(RestStorage.prototype, {
       if (id in this.data) delete this.data[id];
 
       // Delete server data for model:
-      request.call(
-        this,
+      request(this,
         { method: 'DELETE', id: id },
         function(e, result) { callback(e, null); }
       );
