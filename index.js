@@ -28,6 +28,19 @@ function RestStorage(constructor, config) {
   this.ready = false;
   this.parse = config.parse || JSON.parse;
   this.serialize = config.serialize || JSON.stringify;
+  var t = this;
+
+  if (!constructor.prototype.request) {
+    // Create a `request` property on the model type
+    Object.defineProperty(constructor, 'request', {
+      value: function(options, callback) {
+        request(t, options, callback);
+      },
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  }
 
   // Hash of Type'd models.
   this.data = {};
