@@ -113,10 +113,24 @@ function request(store, options, callback) {
     xhr.setRequestHeader(name, options.headers[name]);
   }
 
-  xhr.send(hasBody ? this.serialize(options.data) : null);
+  xhr.send(hasBody ? store.serialize(options.data) : null);
 }
 
 Object.defineProperties(RestStorage.prototype, {
+
+  /**
+   * RestStorage#request(options, callback) -> undefined
+   * - options (Object): Optional configuration options.
+   * - callback (Function): Callback function when request is complete.
+   *
+   * Makes a request for JSON from a server. If data is provided, it will be
+   * stringified as JSON before sending.
+  **/
+  request: {
+    value: function(options, callback) {
+      request(this, options, callback);
+    }
+  },
 
   /**
    * RestStorage#use(data, callback)
