@@ -80,13 +80,21 @@ describe('RestStorage', function() {
     });
   });
 
-  it('should fetch data from the server', function(done) {
+  it('should fetch the entire data set from the server', function(done) {
     User.dataStore.data = {};
     User.fetch(function() {
       User.all(function(e, result) {
         assert.ok(result.length > 0);
         done();
       })
+    });
+  });
+
+  it('should fetch single instance data from the server', function(done) {
+    var user = new User({ username: 'rad' });
+    user.fetch(function(e, result) {
+      assert.equal('Rad', user.get('firstName'));
+      done();
     });
   });
 

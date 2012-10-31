@@ -285,10 +285,55 @@ Object.defineProperties(RestStorage.prototype, {
   },
 
   /**
+   * RestStorage#fetchOne(record, callback(e, result))
+   * - record (Object): An object (or JSON serializable object) to fetch from the database
+   *
+   * Fetches model data object from the database. The only property necessary for success is
+   * the instance's primary key.
+  **/
+  fetchOne: {
+    value: function(record, callback) {
+      if (!record)
+        return callback(createError('ArgumentError', 'Cannot fetch null model.'));
+
+      var Model = this.Model;
+      var primaryKey = Model.primaryKey;
+
+      if (record instanceof Model === false)
+        return callback(createError('ArgumentError', 'Cannot fetch unknown object type.'));
+
+      if (record.isNew)
+        return callback(createError('ArgumentError', 'Cannot fetch an unsaved instance.'));
+
+      // Store ID from before save. If record is new, this will change.
+      var id = record.id;
+
+      request(this, { url: this.config.url + '/' + id, },
+        function(e, result) {
+          if (!e) {
+            if (!result || primaryKey in result === false) {
+              e = createError('HttpResponseError', 'Response is missing a primaryKey and cannot be used.');
+            } else {
+              Object.keys(result).forEach(function(field) {
+                // TODO: Should we do some sort of batched change set? Should it be silent?
+                record.setValue(field, result[field])
+              });
+              // TODO: If the instance is not part of the collection, emit "add" and put it in the colleciton.
+            }
+          }
+          callback(e, record);
+        }.bind(this)
+      );
+
+    },
+    enumerable: true
+  },
+
+  /**
    * RestStorage#save(record, callback(e, result))
    * - record (Object): An object (or JSON serializable object) to be saved to the database.
    *
-   * Saves the provides object to the database.
+   * Saves the provided object to the database.
   **/
   save: {
     value: function(record, callback) {
@@ -320,7 +365,7 @@ Object.defineProperties(RestStorage.prototype, {
             } else {
               Object.keys(result).forEach(function(field) {
                 // TODO: Should we do some sort of batched change set? Should it be silent?
-                record[field] = result[field];
+                record.setValue(field, result[field])
               });
               if (isNew) {
                 Model.emit('add', this.data[record.id] = record);
