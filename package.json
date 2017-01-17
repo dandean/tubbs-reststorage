@@ -25,6 +25,6 @@
     "express": "*",
     "tubbs": "*",
     "browserify": "*",
-    "json-transformer": "*"
+    "json-transformer": ">=1.0.0"
   }
 }
