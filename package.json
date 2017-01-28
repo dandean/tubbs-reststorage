@@ -22,7 +22,7 @@
   "dependencies": {},
   "devDependencies": {
     "mocha": "*",
-    "express": "*",
+    "express": ">=4.14.1",
     "tubbs": "*",
     "browserify": "*",
     "json-transformer": "*"
