@@ -21,7 +21,7 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
-    "mocha": "*",
+    "mocha": ">=3.4.2",
     "express": "*",
     "tubbs": "*",
     "browserify": "*",
