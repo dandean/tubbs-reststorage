@@ -24,7 +24,7 @@
     "mocha": "*",
     "express": "*",
     "tubbs": "*",
-    "browserify": "*",
+    "browserify": ">=14.4.0",
     "json-transformer": "*"
   }
 }
